@@ -2011,7 +2011,7 @@ bool IncrementalService::DataLoaderStub::isHealthParamsValid() const {
             mHealthCheckParams.blockedTimeoutMs < mHealthCheckParams.unhealthyTimeoutMs;
 }
 
-void IncrementalService::DataLoaderStub::onHealthStatus(StorageHealthListener healthListener,
+void IncrementalService::DataLoaderStub::onHealthStatus(StorageHealthListener &healthListener,
                                                         int healthStatus) {
     LOG(DEBUG) << id() << ": healthStatus: " << healthStatus;
     if (healthListener) {
