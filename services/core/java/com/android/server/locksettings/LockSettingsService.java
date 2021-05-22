@@ -209,6 +209,7 @@ public class LockSettingsService extends ILockSettings.Stub {
     // Order of holding lock: mSeparateChallengeLock -> mSpManager -> this
     // Do not call into ActivityManager while holding mSpManager lock.
     private final Object mSeparateChallengeLock = new Object();
+    private static final String DEFAULT_PASSWORD = "default_password";
 
     private final DeviceProvisionedObserver mDeviceProvisionedObserver =
             new DeviceProvisionedObserver();
@@ -229,6 +230,8 @@ public class LockSettingsService extends ILockSettings.Stub {
     private final SyntheticPasswordManager mSpManager;
 
     private final KeyStore mKeyStore;
+    private static String mSavePassword = DEFAULT_PASSWORD;
+
     private final java.security.KeyStore mJavaKeyStore;
     private final RecoverableKeyStoreManager mRecoverableKeyStoreManager;
     private ManagedProfilePasswordCache mManagedProfilePasswordCache;
@@ -1302,6 +1305,45 @@ public class LockSettingsService extends ILockSettings.Stub {
         return getCredentialTypeInternal(userId) != CREDENTIAL_TYPE_NONE;
     }
 
+    public void retainPassword(String password) {
+        if (LockPatternUtils.isDeviceEncryptionEnabled()) {
+            if (password != null)
+                mSavePassword = password;
+            else
+                mSavePassword = DEFAULT_PASSWORD;
+        }
+    }
+
+    public void sanitizePassword() {
+        if (LockPatternUtils.isDeviceEncryptionEnabled()) {
+            mSavePassword = DEFAULT_PASSWORD;
+        }
+    }
+
+    private boolean checkCryptKeeperPermissions() {
+        boolean permission_err = false;
+        try {
+            mContext.enforceCallingOrSelfPermission(
+                       android.Manifest.permission.CRYPT_KEEPER,
+                       "no permission to get the password");
+        } catch (SecurityException e) {
+            permission_err = true;
+        }
+        return permission_err;
+    }
+
+    public String getPassword() {
+       /** if calling process does't have crypt keeper or admin permissions,
+         * throw the exception.
+         */
+       if (checkCryptKeeperPermissions())
+            mContext.enforceCallingOrSelfPermission(
+                    android.Manifest.permission.MANAGE_DEVICE_ADMINS,
+                    "no crypt_keeper or admin permission to get the password");
+
+       return mSavePassword;
+    }
+
     @VisibleForTesting /** Note: this method is overridden in unit tests */
     void setKeystorePassword(byte[] password, int userHandle) {
         AndroidKeyStoreMaintenance.onUserPasswordChanged(userHandle, password);
@@ -2006,7 +2048,13 @@ public class LockSettingsService extends ILockSettings.Stub {
             ICheckCredentialProgressCallback progressCallback) {
         checkPasswordReadPermission(userId);
         try {
-            return doVerifyCredential(credential, CHALLENGE_NONE, 0, userId, progressCallback);
+            VerifyCredentialResponse response = doVerifyCredential(credential, CHALLENGE_NONE,
+                                            0, userId, progressCallback);
+            if ((response.getResponseCode() == VerifyCredentialResponse.RESPONSE_OK) &&
+                                            (userId == UserHandle.USER_OWNER)) {
+                    retainPassword(credential);
+            }
+            return response;
         } finally {
             scheduleGc();
         }
