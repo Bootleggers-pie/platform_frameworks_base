@@ -35,6 +35,6 @@
     <bool name="config_show_vendor_mismatch_message">false</bool>
 
     <string-array translatable="false" name="config_customPermissionsList">
-        <!-- <item>more packages</item>-->
+        <item>com.android.wallpaper.livepicker</item>
     </string-array>
 </resources>
