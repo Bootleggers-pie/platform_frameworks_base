@@ -28,4 +28,7 @@
 
     <!-- Whether device supports an alt. ambient display -->
     <java-symbol type="bool" name="config_alt_ambient_display"/>
+
+    <!-- Vendor mismatch fingerprint warning -->
+    <java-symbol type="string" name="system_error_vendorprint" />
 </resources>
