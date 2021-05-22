@@ -2359,6 +2359,13 @@ public class TelephonyManager {
     }
 
     /**
+     * @hide
+     */
+    public CellLocation getCellLocationBySubId(int subId) {
+        return getCellLocation();
+    }
+
+    /**
      * Returns the neighboring cell information of the device.
      *
      * @return List of NeighboringCellInfo or null if info unavailable.
@@ -2692,6 +2699,13 @@ public class TelephonyManager {
         CarrierConfigManager carrierConfigManager = mContext
                 .getSystemService(CarrierConfigManager.class);
         return carrierConfigManager.getConfigForSubId(getSubId());
+    }
+
+    /**
+     * @hide
+     */
+    public String getNetworkOperatorForSubscription(int subId) {
+        return getNetworkOperatorForPhone(subId);
     }
 
     /**
